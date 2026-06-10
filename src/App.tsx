@@ -3,7 +3,7 @@ import {
   Coins, Shield, Flame, Sword, Heart, Sparkles, RotateCcw, Play, Skull, 
   Crown, BookOpen, ShoppingBag, Shuffle, Info, X, Check, Zap, 
   TrendingUp, Feather, Award, Orbit, ChevronRight, MessageSquareCode,
-  Compass, ShieldAlert
+  Compass, ShieldAlert, Eye, EyeOff
 } from 'lucide-react';
 import { Card, Enemy, Relic, MapNode, GameEvent, GameState, StanceType, CardRarity } from './types';
 import { CARD_TEMPLATES, RELIC_LIST, ENEMY_TEMPLATES, generateMap, initializeGame, createCardInstance, EVENT_LIST } from './gameData';
@@ -33,6 +33,7 @@ export default function App() {
   const [selectedShopCardPrice, setSelectedShopCardPrice] = useState<number>(0);
   const [selectedUpgradeCard, setSelectedUpgradeCard] = useState<Card | null>(null);
   const [activeTab, setActiveTab] = useState<'battle' | 'narrative'>('battle');
+  const [showLogs, setShowLogs] = useState(true);
 
   // Sync state to localStorage on modification
   useEffect(() => {
@@ -1689,96 +1690,98 @@ export default function App() {
 
         {/* --- MAIN COMBAT INTERFACE --- */}
         {state.gameStateType === 'battle' && state.enemies.length > 0 && (
-          <div className="flex-1 flex flex-col md:flex-row max-w-7xl mx-auto w-full p-4 gap-4 select-none">
+          <div className={`flex-1 flex flex-col md:flex-row ${showLogs ? 'max-w-7xl' : 'max-w-full px-4 lg:px-8'} mx-auto w-full p-4 gap-4 select-none transition-all duration-300`}>
             
             {/* SIDE BAR: GAME LOGS & GEMINI AI NARRATIONS */}
-            <div className="w-full md:w-80 border border-neutral-800 rounded-xl p-4 bg-neutral-900/40 flex flex-col justify-between max-h-[600px] select-none">
-              <div className="flex flex-col space-y-3 flex-1 overflow-hidden select-none">
-                {/* Visual tabs to toggle between system logs and AI commentator */}
-                <div className="flex bg-neutral-950 rounded p-0.5 border border-neutral-800">
-                  <button 
-                    onClick={() => setActiveTab('battle')}
-                    className={`flex-1 text-xs py-1.5 rounded text-center transition font-semibold ${activeTab === 'battle' ? 'bg-neutral-800 text-glow-gold text-white shadow' : 'text-neutral-500'}`}
-                  >
-                    戦況ログ
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab('narrative')}
-                    className={`flex-1 text-xs py-1.5 rounded text-center transition font-semibold flex items-center justify-center space-x-1 ${activeTab === 'narrative' ? 'bg-neutral-800 text-glow-gold text-yellow-400 shadow' : 'text-neutral-500'}`}
-                  >
-                    <MessageSquareCode className="w-3 h-3 text-yellow-500 animate-pulse" />
-                    <span>AI実況</span>
-                  </button>
+            {showLogs && (
+              <div className="w-full md:w-80 border border-neutral-800 rounded-xl p-4 bg-neutral-900/40 flex flex-col justify-between max-h-[600px] select-none shrink-0">
+                <div className="flex flex-col space-y-3 flex-1 overflow-hidden select-none">
+                  {/* Visual tabs to toggle between system logs and AI commentator */}
+                  <div className="flex bg-neutral-950 rounded p-0.5 border border-neutral-800">
+                    <button 
+                      onClick={() => setActiveTab('battle')}
+                      className={`flex-1 text-xs py-1.5 rounded text-center transition font-semibold ${activeTab === 'battle' ? 'bg-neutral-800 text-glow-gold text-white shadow' : 'text-neutral-500'}`}
+                    >
+                      戦況ログ
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('narrative')}
+                      className={`flex-1 text-xs py-1.5 rounded text-center transition font-semibold flex items-center justify-center space-x-1 ${activeTab === 'narrative' ? 'bg-neutral-800 text-glow-gold text-yellow-400 shadow' : 'text-neutral-500'}`}
+                    >
+                      <MessageSquareCode className="w-3 h-3 text-yellow-500 animate-pulse" />
+                      <span>AI実況</span>
+                    </button>
+                  </div>
+
+                  {activeTab === 'battle' ? (
+                    /* SYSTEM BATTLE LOGS */
+                    <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 font-mono text-xs leading-relaxed select-none">
+                      {state.battleLog.map((log, idx) => (
+                        <div key={idx} className={`p-1.5 rounded ${idx === 0 ? 'bg-neutral-800/40 text-neutral-100 border-l-2 border-red-500' : 'text-neutral-500'}`}>
+                          {log}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    /* GEMINI GM GRAPHICS & DIALOGUE */
+                    <div className="flex-1 overflow-y-auto flex flex-col space-y-3.5 pr-1 text-xs leading-relaxed select-none">
+                      <div className="border border-neutral-800 bg-neutral-950/60 p-3 rounded-lg relative overflow-hidden flex flex-col justify-between min-h-32">
+                        <div className="absolute top-1 right-2 inline-flex items-center space-x-1">
+                          <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" fill="none" />
+                          <span className="text-[9px] text-yellow-500 font-mono font-bold tracking-tight">Gemini 3.5</span>
+                        </div>
+
+                        <div className="space-y-2 mt-2 select-none">
+                          <p className="text-[10px] text-neutral-500 font-mono tracking-wider uppercase font-semibold">ゲームマスターの囁記:</p>
+                          {isAiLoading ? (
+                            <p className="text-yellow-500 font-medium italic animate-pulse">（思考展開中...）</p>
+                          ) : aiNarration ? (
+                            <blockquote className="text-neutral-300 italic pl-2 border-l-2 border-yellow-500 font-medium text-xs leading-5">
+                              「{aiNarration}」
+                            </blockquote>
+                          ) : (
+                            <p className="text-neutral-600 italic">
+                              （あなたがカードをプレイするかアクションを起こすと、Geminiによる叙情的な戦況実況がリアルタイムに語られます。）
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Manual trigger button */}
+                        <button 
+                          onClick={() => fetchBattleNarration(state.battleLog[0] || '攻防継続。')}
+                          disabled={isAiLoading}
+                          className="mt-4 bg-neutral-900 border border-neutral-800 hover:border-yellow-600/50 hover:bg-neutral-850 py-1 rounded text-[10px] text-yellow-400 disabled:opacity-40 select-none cursor-pointer"
+                        >
+                          AIに実況分析をリクエストする
+                        </button>
+                      </div>
+
+                      <div className="p-2 bg-neutral-900/60 rounded border border-neutral-800 text-[10px] text-neutral-500 select-none">
+                        <p className="font-semibold text-neutral-400 mb-1">実況トリガー:</p>
+                        ・攻撃/回復を行う<br />
+                        ・戦闘の「構え」を切り替える<br />
+                        ・怒気が極限を突破する
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {activeTab === 'battle' ? (
-                  /* SYSTEM BATTLE LOGS */
-                  <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 font-mono text-xs leading-relaxed select-none">
-                    {state.battleLog.map((log, idx) => (
-                      <div key={idx} className={`p-1.5 rounded ${idx === 0 ? 'bg-neutral-800/40 text-neutral-100 border-l-2 border-red-500' : 'text-neutral-500'}`}>
-                        {log}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  /* GEMINI GM GRAPHICS & DIALOGUE */
-                  <div className="flex-1 overflow-y-auto flex flex-col space-y-3.5 pr-1 text-xs leading-relaxed select-none">
-                    <div className="border border-neutral-800 bg-neutral-950/60 p-3 rounded-lg relative overflow-hidden flex flex-col justify-between min-h-32">
-                      <div className="absolute top-1 right-2 inline-flex items-center space-x-1">
-                        <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" fill="none" />
-                        <span className="text-[9px] text-yellow-500 font-mono font-bold tracking-tight">Gemini 3.5</span>
-                      </div>
-
-                      <div className="space-y-2 mt-2 select-none">
-                        <p className="text-[10px] text-neutral-500 font-mono tracking-wider uppercase font-semibold">ゲームマスターの囁記:</p>
-                        {isAiLoading ? (
-                          <p className="text-yellow-500 font-medium italic animate-pulse">（思考展開中...）</p>
-                        ) : aiNarration ? (
-                          <blockquote className="text-neutral-300 italic pl-2 border-l-2 border-yellow-500 font-medium text-xs leading-5">
-                            「{aiNarration}」
-                          </blockquote>
-                        ) : (
-                          <p className="text-neutral-600 italic">
-                            （あなたがカードをプレイするかアクションを起こすと、Geminiによる叙情的な戦況実況がリアルタイムに語られます。）
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Manual trigger button */}
-                      <button 
-                        onClick={() => fetchBattleNarration(state.battleLog[0] || '攻防継続。')}
-                        disabled={isAiLoading}
-                        className="mt-4 bg-neutral-900 border border-neutral-800 hover:border-yellow-600/50 hover:bg-neutral-850 py-1 rounded text-[10px] text-yellow-400 disabled:opacity-40 select-none cursor-pointer"
-                      >
-                        AIに実況分析をリクエストする
-                      </button>
-                    </div>
-
-                    <div className="p-2 bg-neutral-900/60 rounded border border-neutral-800 text-[10px] text-neutral-500 select-none">
-                      <p className="font-semibold text-neutral-400 mb-1">実況トリガー:</p>
-                      ・攻撃/回復を行う<br />
-                      ・戦闘の「構え」を切り替える<br />
-                      ・怒気が極限を突破する
-                    </div>
-                  </div>
-                )}
+                {/* RETREAT */}
+                <button 
+                  onClick={() => setState(prev => ({ ...prev, gameStateType: 'map', activeBattleNodeId: null }))}
+                  className="mt-3 text-neutral-500 hover:text-red-400 text-xs transition p-2 text-center border border-neutral-800 hover:border-red-950 rounded select-none cursor-pointer"
+                >
+                  逃走してマップへ戻る
+                </button>
               </div>
-
-              {/* RETREAT */}
-              <button 
-                onClick={() => setState(prev => ({ ...prev, gameStateType: 'map', activeBattleNodeId: null }))}
-                className="mt-3 text-neutral-500 hover:text-red-400 text-xs transition p-2 text-center border border-neutral-800 hover:border-red-950 rounded select-none cursor-pointer"
-              >
-                逃走してマップへ戻る
-              </button>
-            </div>
+            )}
 
             {/* COMBAT FIELD: CARD FIGHTERS SPACE */}
             <div className="flex-1 border border-neutral-800 rounded-xl p-6 bg-neutral-900/25 flex flex-col justify-between relative overflow-hidden select-none">
               
               {/* STANCE INDICATORS HUD BAR */}
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-neutral-800 pb-4 mb-4 select-none">
-                <div className="flex items-center space-x-3 select-none">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-neutral-800 pb-4 mb-4 select-none gap-4">
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 select-none">
                   <div className="text-neutral-400 text-xs text-left">
                     <p className="text-[10px] uppercase font-mono tracking-wider font-semibold text-neutral-500">現在の戦闘姿勢 (Stance)</p>
                     <div className="flex items-center space-x-1.5 mt-0.5">
@@ -1791,6 +1794,25 @@ export default function App() {
                     </div>
                   </div>
                 </div>
+
+                {/* LOGS TOGGLE BUTTON */}
+                <button
+                  type="button"
+                  onClick={() => setShowLogs(prev => !prev)}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-neutral-800 hover:border-yellow-600/50 bg-neutral-950 text-xs font-semibold text-neutral-300 hover:text-yellow-400 active:scale-95 transition cursor-pointer select-none"
+                >
+                  {showLogs ? (
+                    <>
+                      <EyeOff className="w-3.5 h-3.5 text-yellow-500" />
+                      <span>戦闘ログ・AI実況を隠す</span>
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="w-3.5 h-3.5 text-yellow-500 animate-pulse" />
+                      <span>戦闘ログ・AI実況を表示</span>
+                    </>
+                  )}
+                </button>
 
                 {/* FURY Flame BAR */}
                 <div className="mt-3 md:mt-0 flex items-center space-x-3 bg-neutral-950 p-2 border border-neutral-800 rounded-lg select-none">
