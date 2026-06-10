@@ -1334,8 +1334,8 @@ export default function App() {
       {/* GLOBAL HUD BAR */}
       <header className="bg-neutral-900/90 border-b border-neutral-800 backdrop-blur-md px-4 py-3 sticky top-0 z-40 flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <div className="cursor-pointer" onClick={() => setState(prev => ({ ...prev, gameStateType: 'title' }))}>
-            <span className="font-sans font-bold text-lg tracking-wider text-glow-gold text-yellow-500 uppercase flex items-center font-mono">
+          <div className="flex items-center">
+            <span className="font-sans font-bold text-lg tracking-wider text-glow-gold text-yellow-500 uppercase flex items-center font-mono select-none">
               <Sword className="w-5 h-5 mr-1.5 text-yellow-500" />
               Wendeck
             </span>
